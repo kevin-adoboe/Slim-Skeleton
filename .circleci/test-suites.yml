@@ -1,0 +1,14 @@
+name: phpunit
+# PHPUnit 9 accepts only one test path on the command line, so the run step
+# writes a temporary copy of phpunit.xml that lists the selected test files.
+discover: find tests -type f -name '*Test.php' | sort
+run: |
+  files=""
+  for f in << test.atoms >>; do files="$files<file>./$f</file>"; done
+  sed "s#<directory>./tests/</directory>#$files#" phpunit.xml > phpunit.selected.xml
+  rc=0
+  vendor/bin/phpunit --configuration phpunit.selected.xml --log-junit "<< outputs.junit >>" || rc=$?
+  rm -f phpunit.selected.xml
+  exit $rc
+options:
+  store-test-results: true
