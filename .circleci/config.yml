@@ -1,0 +1,28 @@
+version: 2.1
+
+# No published CircleCI function covers PHP, so this job uses the cimg/php
+# image (PHP + Composer preinstalled). composer.lock is gitignored, so there is
+# no lockfile to key a dependency cache on.
+jobs:
+  slim-skeleton:
+    docker:
+      - image: cimg/php:8.5
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: composer install --no-interaction --no-progress --prefer-dist
+      - run:
+          name: Coding standards
+          command: vendor/bin/phpcs
+      - run:
+          name: Static analysis
+          command: vendor/bin/phpstan analyse --no-progress
+      - run:
+          name: Tests
+          command: circleci testsuite run "phpunit"
+
+workflows:
+  ci:
+    jobs:
+      - slim-skeleton
