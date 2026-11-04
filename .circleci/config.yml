@@ -1,0 +1,37 @@
+version: 2.1
+
+jobs:
+  php:
+    docker:
+      # Highest PHP version used by the existing GitHub Actions matrix.
+      - image: cimg/php:8.2
+    steps:
+      - checkout
+      # composer.lock is gitignored, so cache on composer.json instead.
+      - restore_cache:
+          keys:
+            - composer-v1-{{ checksum "composer.json" }}
+            - composer-v1-
+      - run:
+          name: Install dependencies
+          command: composer install --no-interaction --no-progress --prefer-dist
+      - save_cache:
+          key: composer-v1-{{ checksum "composer.json" }}
+          paths:
+            - ~/.cache/composer
+      - run:
+          name: Tests
+          command: circleci testsuite run "phpunit"
+      - store_test_results:
+          path: test-results
+      - run:
+          name: Coding standards
+          command: vendor/bin/phpcs
+      - run:
+          name: Static analysis
+          command: vendor/bin/phpstan --no-progress
+
+workflows:
+  main:
+    jobs:
+      - php

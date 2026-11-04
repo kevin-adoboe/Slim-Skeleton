@@ -1,0 +1,19 @@
+name: phpunit
+discover: find tests -type f -name '*Test.php' | sort
+# PHPUnit 9 accepts only one path argument, so build a temporary config
+# (mirroring phpunit.xml) that lists the selected test files.
+# The JUnit report is also copied to test-results/ for store_test_results.
+run: |
+  cfg="$(mktemp --suffix=.xml)"
+  {
+    echo "<phpunit bootstrap=\"$PWD/tests/bootstrap.php\" colors=\"true\" backupGlobals=\"false\" backupStaticAttributes=\"false\" beStrictAboutTestsThatDoNotTestAnything=\"true\" beStrictAboutChangesToGlobalState=\"true\" beStrictAboutOutputDuringTests=\"true\" convertErrorsToExceptions=\"true\" convertNoticesToExceptions=\"true\" convertWarningsToExceptions=\"true\" processIsolation=\"false\" stopOnFailure=\"false\">"
+    echo '<testsuites><testsuite name="Test Suite">'
+    for f in << test.atoms >>; do echo "<file>$PWD/$f</file>"; done
+    echo '</testsuite></testsuites></phpunit>'
+  } > "$cfg"
+  rc=0
+  vendor/bin/phpunit --configuration "$cfg" --log-junit "<< outputs.junit >>" || rc=$?
+  mkdir -p test-results/phpunit
+  [ -f "<< outputs.junit >>" ] && cp "<< outputs.junit >>" "$(mktemp -p test-results/phpunit junit-XXXXXX.xml)"
+  rm -f "$cfg"
+  exit $rc
