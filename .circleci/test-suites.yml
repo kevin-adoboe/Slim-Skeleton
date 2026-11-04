@@ -1,0 +1,15 @@
+name: phpunit
+discover: find tests -type f -name '*Test.php' | sort
+run: |
+  # PHPUnit 9 accepts a single path, so build a config from phpunit.xml
+  # that lists only the selected test files.
+  cfg="$(mktemp --suffix=.xml)"
+  files=""
+  for f in << test.atoms >>; do files="$files<file>$PWD/$f</file>"; done
+  sed -e "s#bootstrap=\"tests/bootstrap.php\"#bootstrap=\"$PWD/tests/bootstrap.php\"#" \
+      -e "s#<directory>./tests/</directory>#$files#" \
+      -e "s#<directory suffix=\".php\">./src/</directory>#<directory suffix=\".php\">$PWD/src/</directory>#" \
+      phpunit.xml > "$cfg"
+  vendor/bin/phpunit -c "$cfg" --log-junit "<< outputs.junit >>"
+options:
+  store-test-results: true
