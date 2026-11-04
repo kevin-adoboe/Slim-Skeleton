@@ -1,0 +1,37 @@
+version: 2.1
+
+# No CircleCI function covers PHP, so this job uses the cimg/php image,
+# which ships PHP and Composer.
+
+jobs:
+  test:
+    docker:
+      - image: cimg/php:8.5
+    steps:
+      - checkout
+      # composer.lock is gitignored, so key the cache on composer.json.
+      - restore_cache:
+          keys:
+            - composer-v1-{{ checksum "composer.json" }}
+            - composer-v1-
+      - run:
+          name: Install dependencies
+          command: composer install --no-interaction --no-progress --prefer-dist
+      - save_cache:
+          key: composer-v1-{{ checksum "composer.json" }}
+          paths:
+            - ~/.cache/composer
+      - run:
+          name: Coding standards
+          command: vendor/bin/phpcs
+      - run:
+          name: Static analysis
+          command: vendor/bin/phpstan --no-progress
+      - run:
+          name: Tests
+          command: circleci testsuite run "phpunit"
+
+workflows:
+  ci:
+    jobs:
+      - test
