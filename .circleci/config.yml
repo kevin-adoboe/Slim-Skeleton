@@ -1,0 +1,28 @@
+version: 2.1
+
+jobs:
+  php:
+    docker:
+      # No CircleCI function covers PHP, so use the cimg image. composer.json
+      # allows ^7.4 || ^8.0; 8.5 is the newest cimg/php release.
+      - image: cimg/php:8.5
+    steps:
+      - checkout
+      # composer.lock is gitignored, so there is no lockfile to key a cache on.
+      - run:
+          name: Install dependencies
+          command: composer install --no-interaction --no-progress --prefer-dist
+      - run:
+          name: Coding standards
+          command: vendor/bin/phpcs
+      - run:
+          name: Static analysis
+          command: vendor/bin/phpstan --no-progress
+      - run:
+          name: Tests
+          command: circleci testsuite run "phpunit"
+
+workflows:
+  main:
+    jobs:
+      - php

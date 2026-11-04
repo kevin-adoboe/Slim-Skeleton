@@ -1,0 +1,17 @@
+name: phpunit
+discover: find tests -type f -name '*Test.php' | sort
+run: |
+  # PHPUnit 9 accepts only one test path, so build a temporary config from
+  # phpunit.xml that lists the selected test files.
+  cfg=.phpunit-atoms.xml
+  trap 'rm -f "$cfg"' EXIT
+  {
+    sed -n '1,/<testsuites>/p' phpunit.xml
+    echo '<testsuite name="atoms">'
+    for f in << test.atoms >>; do echo "<file>$f</file>"; done
+    echo '</testsuite>'
+    sed -n '/<\/testsuites>/,$p' phpunit.xml
+  } > "$cfg"
+  vendor/bin/phpunit --configuration "$cfg" --log-junit "<< outputs.junit >>"
+options:
+  store-test-results: true
