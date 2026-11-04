@@ -1,0 +1,30 @@
+version: 2.1
+
+# No published CircleCI function covers PHP, so this job uses the cimg/php
+# image (PHP and Composer preinstalled). PHP 8.2 is the newest version the
+# existing GitHub Actions workflow tests.
+
+jobs:
+  test:
+    docker:
+      - image: cimg/php:8.2
+    steps:
+      - checkout
+      # composer.lock is gitignored, so there is no lockfile to key a cache on.
+      - run:
+          name: Install dependencies
+          command: composer install --no-interaction --no-progress --prefer-dist
+      - run:
+          name: Coding standards
+          command: vendor/bin/phpcs
+      - run:
+          name: Static analysis
+          command: vendor/bin/phpstan --no-progress
+      - run:
+          name: Tests
+          command: circleci testsuite run "phpunit"
+
+workflows:
+  main:
+    jobs:
+      - test
