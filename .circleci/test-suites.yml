@@ -1,0 +1,15 @@
+name: phpunit
+discover: find tests -type f -name '*Test.php' | sort
+# PHPUnit 9 accepts only one path argument, so build a copy of phpunit.xml
+# whose test suite lists exactly the selected files, then run that.
+run: |
+  files=""
+  for f in << test.atoms >>; do files="$files<file>./$f</file>"; done
+  sed "s#<directory>./tests/</directory>#$files#" phpunit.xml > phpunit.selected.xml
+  status=0
+  vendor/bin/phpunit --configuration phpunit.selected.xml --log-junit "<< outputs.junit >>" || status=$?
+  rm -f phpunit.selected.xml
+  exit $status
+outputs:
+  # Must match the store_test_results path in .circleci/config.yml.
+  junit: test-results/phpunit.xml
