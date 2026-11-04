@@ -1,0 +1,40 @@
+version: 2.1
+
+jobs:
+  php:
+    docker:
+      # composer.json allows PHP ^7.4 || ^8.0; 8.2 is the newest version the
+      # existing GitHub Actions workflow tests against.
+      - image: cimg/php:8.2
+    environment:
+      COMPOSER_CACHE_DIR: /home/circleci/.cache/composer
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            # composer.lock is gitignored, so key on composer.json instead.
+            - composer-v1-{{ checksum "composer.json" }}
+            - composer-v1-
+      - run:
+          name: Install dependencies
+          command: composer install --no-interaction --no-progress --prefer-dist
+      - save_cache:
+          key: composer-v1-{{ checksum "composer.json" }}
+          paths:
+            - ~/.cache/composer
+      - run:
+          name: Tests
+          command: circleci testsuite run "phpunit"
+      - store_test_results:
+          path: test-results
+      - run:
+          name: Coding standards
+          command: vendor/bin/phpcs
+      - run:
+          name: Static analysis
+          command: vendor/bin/phpstan --no-progress
+
+workflows:
+  main:
+    jobs:
+      - php
